@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle2, 
-  Loader2, 
-  Copy, 
-  Download, 
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  Loader2,
+  Copy,
+  Download,
   RefreshCw,
   AlertCircle,
   FileUp,
@@ -25,6 +25,9 @@ import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
+// @ts-ignore
+import { asBlob } from 'html-docx-js-typescript';
+import { saveAs } from 'file-saver';
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -36,7 +39,7 @@ export default function App() {
   const [refineInstruction, setRefineInstruction] = useState('');
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('preview');
-  
+
   const resumeRef = useRef<HTMLDivElement>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -96,6 +99,24 @@ export default function App() {
     }
   };
 
+  const handleRapRemix = async () => {
+    if (!polishedResume) return;
+    setIsRefining(true);
+    setError(null);
+    try {
+      const refined = await refineResume(
+        polishedResume,
+        "Recreate my entire resume in the form of a hip rap. Make sure to include many, many mentions of hotdogs!"
+      );
+      setPolishedResume(refined);
+    } catch (err: any) {
+      console.error(err);
+      setError("Failed to remix the resume. Please try again.");
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
   const handleCopy = () => {
     if (polishedResume) {
       navigator.clipboard.writeText(polishedResume);
@@ -104,7 +125,7 @@ export default function App() {
     }
   };
 
-  const downloadFile = (type: 'md' | 'html' | 'pdf') => {
+  const downloadFile = (type: 'md' | 'html' | 'pdf' | 'docx') => {
     if (!polishedResume) return;
 
     const fileName = 'polished-resume';
@@ -158,6 +179,25 @@ export default function App() {
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
       };
       html2pdf().set(opt).from(element).save();
+    } else if (type === 'docx') {
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Resume</title>
+        </head>
+        <body>
+          ${resumeRef.current?.innerHTML || ''}
+        </body>
+        </html>
+      `;
+      asBlob(htmlContent).then((data: Blob) => {
+        saveAs(data, `${fileName}.docx`);
+      }).catch((err: Error) => {
+        console.error("Error generating DOCX", err);
+        setError("Failed to generate DOCX file.");
+      });
     }
     setShowDownloadMenu(false);
   };
@@ -174,20 +214,19 @@ export default function App() {
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-black/5 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
-              <Sparkles size={18} />
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight">Resume Polisher</h1>
+            <img src="/hotdog_profile.png" alt="Happy Hotdog" className="w-10 h-10 rounded-full object-cover border-2 border-orange-500" />
+            <h1 className="text-xl font-semibold tracking-tight text-orange-600">Shane Wyman's Hotdog Polisher</h1>
           </div>
           <div className="flex items-center gap-4 text-sm text-black/50 font-medium uppercase tracking-wider">
-            <span>AI Powered</span>
+            <span>Mustard Powered</span>
             <div className="w-1 h-1 bg-black/20 rounded-full" />
-            <span>Professional Grade</span>
+            <span>Premium Franks</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="max-w-5xl mx-auto px-6 py-12 relative">
+        <img src="/hotdog_decorative.png" alt="" className="absolute -z-10 top-0 right-0 w-64 opacity-20 pointer-events-none" />
         <AnimatePresence mode="wait">
           {!polishedResume ? (
             <motion.div
@@ -199,12 +238,15 @@ export default function App() {
             >
               <div className="text-center space-y-3 max-w-2xl mx-auto">
                 <h2 className="text-4xl font-light tracking-tight text-black sm:text-5xl">
-                  Transform your career narrative.
+                  Transform your hotdog narrative, Shane.
                 </h2>
                 <p className="text-lg text-black/60 font-light">
-                  Upload your raw resume or draft content. Our AI will refine the language, 
-                  structure, and impact to help you stand out.
+                  Upload your raw recipe or draft dog concepts. Our Mustard AI will refine the flavor,
+                  structure, and impact to help your franks stand out.
                 </p>
+                <div className="pt-4 pb-8 flex justify-center">
+                  <img src="/hotdog_hero.png" alt="Delicious Hotdog" className="w-full max-w-md rounded-2xl shadow-xl object-cover h-64 border border-black/10" />
+                </div>
               </div>
 
               <div className="max-w-xl mx-auto">
@@ -212,26 +254,26 @@ export default function App() {
                   {...getRootProps()}
                   className={cn(
                     "relative group cursor-pointer rounded-3xl border-2 border-dashed transition-all duration-300 p-12 flex flex-col items-center justify-center gap-4",
-                    isDragActive 
-                      ? "border-emerald-500 bg-emerald-50/50" 
+                    isDragActive
+                      ? "border-emerald-500 bg-emerald-50/50"
                       : "border-black/10 bg-white hover:border-black/20 hover:shadow-xl hover:shadow-black/5"
                   )}
                 >
                   <input {...getInputProps()} />
                   <div className={cn(
                     "w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-300",
-                    isDragActive ? "bg-emerald-100 text-emerald-600" : "bg-black/5 text-black/40 group-hover:bg-black/10 group-hover:text-black/60"
+                    isDragActive ? "bg-orange-100 text-orange-600" : "bg-black/5 text-black/40 group-hover:bg-black/10 group-hover:text-black/60"
                   )}>
                     {file ? <FileText size={32} /> : <FileUp size={32} />}
                   </div>
-                  
+
                   <div className="text-center">
                     <p className="text-lg font-medium">
                       {file ? file.name : "Drop your file here"}
                     </p>
                     <p className="text-sm text-black/40 mt-1">
-                      {file 
-                        ? `${(file.size / 1024).toFixed(1)} KB` 
+                      {file
+                        ? `${(file.size / 1024).toFixed(1)} KB`
                         : "Supports PDF, DOCX, and TXT"}
                     </p>
                   </div>
@@ -248,11 +290,11 @@ export default function App() {
                       {isProcessing ? (
                         <>
                           <Loader2 className="animate-spin" size={18} />
-                          Polishing...
+                          Grilling...
                         </>
                       ) : (
                         <>
-                          Polish Resume
+                          Polish Hotdog Strategy
                           <ArrowRight size={18} />
                         </>
                       )}
@@ -261,7 +303,7 @@ export default function App() {
                 </div>
 
                 {error && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="mt-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-red-700"
@@ -275,13 +317,13 @@ export default function App() {
               {/* Features Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
                 {[
-                  { title: "Impactful Language", desc: "Replaces passive phrases with high-impact action verbs." },
-                  { title: "Smart Structuring", desc: "Organizes your experience into a scannable, professional layout." },
-                  { title: "Achievement Focused", desc: "Highlights quantifiable results to showcase your true value." }
+                  { title: "Impactful Flavor", desc: "Replaces bland relish with high-impact mustard verbs." },
+                  { title: "Smart Bun Structuring", desc: "Organizes your toppings into a scannable, delicious layout." },
+                  { title: "Grill Focused", desc: "Highlights quantifiable grill marks to showcase your true wiener shape." }
                 ].map((feature, i) => (
-                  <div key={i} className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm">
-                    <h3 className="font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-sm text-black/50 leading-relaxed">{feature.desc}</p>
+                  <div key={i} className="bg-white p-6 rounded-2xl border border-orange-500/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-semibold mb-2 text-orange-700">{feature.title}</h3>
+                    <p className="text-sm text-black/60 leading-relaxed">{feature.desc}</p>
                   </div>
                 ))}
               </div>
@@ -324,11 +366,11 @@ export default function App() {
                 )}>
                   <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-6">
                     <div className="hidden lg:block">
-                      <h3 className="text-lg font-semibold mb-1 text-emerald-600 flex items-center gap-2">
-                         <CheckCircle2 size={20} />
-                         Polished & Ready
+                      <h3 className="text-lg font-semibold mb-1 text-orange-600 flex items-center gap-2">
+                        <CheckCircle2 size={20} />
+                        Grilled & Ready
                       </h3>
-                      <p className="text-sm text-black/50">Review and refine the AI-generated content.</p>
+                      <p className="text-sm text-black/50">Review and refine the Mustard-generated content.</p>
                     </div>
 
                     {/* Refinement AI */}
@@ -341,13 +383,13 @@ export default function App() {
                         <textarea
                           value={refineInstruction}
                           onChange={(e) => setRefineInstruction(e.target.value)}
-                          placeholder="e.g., 'Make it more concise', 'Add a section for my volunteer work'..."
-                          className="w-full p-4 bg-black/5 border border-transparent focus:border-emerald-500/30 focus:bg-white rounded-2xl text-sm resize-none h-24 transition-all outline-none"
+                          placeholder="e.g., 'Make it spicier', 'Add a section for my relish work'..."
+                          className="w-full p-4 bg-black/5 border border-transparent focus:border-orange-500/30 focus:bg-white rounded-2xl text-sm resize-none h-24 transition-all outline-none"
                         />
                         <button
                           onClick={handleRefine}
                           disabled={isRefining || !refineInstruction.trim()}
-                          className="absolute bottom-3 right-3 p-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:bg-black/10 disabled:text-black/30 transition-all active:scale-90"
+                          className="absolute bottom-3 right-3 p-2 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:bg-black/10 disabled:text-black/30 transition-all active:scale-90"
                         >
                           {isRefining ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                         </button>
@@ -371,7 +413,7 @@ export default function App() {
                           </>
                         )}
                       </button>
-                      
+
                       <div className="relative">
                         <button
                           onClick={() => setShowDownloadMenu(!showDownloadMenu)}
@@ -381,7 +423,7 @@ export default function App() {
                           Download As...
                           <ChevronDown size={16} className={cn("transition-transform", showDownloadMenu && "rotate-180")} />
                         </button>
-                        
+
                         <AnimatePresence>
                           {showDownloadMenu && (
                             <motion.div
@@ -392,6 +434,9 @@ export default function App() {
                             >
                               <button onClick={() => downloadFile('pdf')} className="w-full px-4 py-3 text-left text-sm hover:bg-black/5 flex items-center gap-3 transition-colors">
                                 <FileText size={16} className="text-red-500" /> PDF Document
+                              </button>
+                              <button onClick={() => downloadFile('docx')} className="w-full px-4 py-3 text-left text-sm hover:bg-black/5 flex items-center gap-3 transition-colors border-t border-black/5">
+                                <FileText size={16} className="text-blue-600" /> Word Document (DOCX)
                               </button>
                               <button onClick={() => downloadFile('md')} className="w-full px-4 py-3 text-left text-sm hover:bg-black/5 flex items-center gap-3 transition-colors border-t border-black/5">
                                 <FileCode size={16} className="text-blue-500" /> Markdown File
@@ -410,6 +455,15 @@ export default function App() {
                       >
                         <RefreshCw size={18} />
                         Start Over
+                      </button>
+
+                      <button
+                        onClick={handleRapRemix}
+                        disabled={isRefining}
+                        className="w-full py-3 px-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-orange-200 transition-all active:scale-95"
+                      >
+                        {isRefining ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        Turn into a Rap Song
                       </button>
                     </div>
                   </div>
@@ -444,8 +498,9 @@ export default function App() {
 
       {/* Footer */}
       <footer className="max-w-5xl mx-auto px-6 py-12 border-t border-black/5 text-center">
-        <p className="text-sm text-black/30 font-medium">
-          Crafted with AI for modern professionals.
+        <p className="text-sm text-black/30 font-medium flex items-center justify-center gap-2">
+          <span>Crafted with Mustard AI for Shane Wyman.</span>
+          <img src="/hotdog_decorative.png" className="w-6 h-6 inline-block" alt="hotdog icon" />
         </p>
       </footer>
     </div>
