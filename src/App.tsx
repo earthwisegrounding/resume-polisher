@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from 'motion/react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 // @ts-ignore
-import { asBlob } from 'html-docx-js-typescript';
+import htmlToDocx from 'html-to-docx';
 import { saveAs } from 'file-saver';
 
 export default function App() {
@@ -125,21 +125,15 @@ export default function App() {
     }
   };
 
-  const downloadFile = (type: 'md' | 'html' | 'pdf' | 'docx') => {
-    if (!polishedResume) return;
+  const downloadFile = async (type: 'md' | 'html' | 'pdf' | 'docx') => {
+    if (!polishedResume || !resumeRef.current) return;
 
     const fileName = 'polished-resume';
+    setShowDownloadMenu(false);
 
     if (type === 'md') {
       const blob = new Blob([polishedResume], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${fileName}.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      saveAs(blob, `${fileName}.md`);
     } else if (type === 'html') {
       const htmlContent = `
         <!DOCTYPE html>
@@ -156,50 +150,60 @@ export default function App() {
           </style>
         </head>
         <body>
-          ${resumeRef.current?.innerHTML || ''}
+          ${resumeRef.current.innerHTML}
         </body>
         </html>
       `;
       const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${fileName}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      saveAs(blob, `${fileName}.html`);
     } else if (type === 'pdf') {
-      const element = resumeRef.current;
-      const opt = {
-        margin: 1,
-        filename: `${fileName}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-      };
-      html2pdf().set(opt).from(element).save();
+      setIsProcessing(true); // Show some loading state while generating
+      try {
+        const element = resumeRef.current.cloneNode(true) as HTMLElement;
+        const opt = {
+          margin: 0.5,
+          filename: `${fileName}.pdf`,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+        };
+        // Use a timeout to allow the browser to paint the loading state
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await html2pdf().set(opt).from(element).save();
+      } catch (err) {
+        console.error("PDF generation failed:", err);
+        setError("Failed to generate PDF.");
+      } finally {
+        setIsProcessing(false);
+      }
     } else if (type === 'docx') {
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Resume</title>
-        </head>
-        <body>
-          ${resumeRef.current?.innerHTML || ''}
-        </body>
-        </html>
-      `;
-      asBlob(htmlContent).then((data: Blob) => {
-        saveAs(data, `${fileName}.docx`);
-      }).catch((err: Error) => {
+      setIsProcessing(true);
+      try {
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Resume</title>
+          </head>
+          <body>
+            ${resumeRef.current.innerHTML}
+          </body>
+          </html>
+        `;
+        const blob = await htmlToDocx(htmlContent, null, {
+          table: { row: { cantSplit: true } },
+          footer: true,
+          pageNumber: true,
+        });
+        saveAs(blob, `${fileName}.docx`);
+      } catch (err: any) {
         console.error("Error generating DOCX", err);
         setError("Failed to generate DOCX file.");
-      });
+      } finally {
+        setIsProcessing(false);
+      }
     }
-    setShowDownloadMenu(false);
   };
 
   const reset = () => {
