@@ -1,3 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Comparison: Original vs. Enhanced</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 2rem 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .audio-card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .audio-card:hover {
+            transform: translateY(-4px);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 0.5rem;
+        }
+
+        p {
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .label-before { color: #64748b; }
+        .label-after { color: #059669; }
+        .label-special { color: #7c3aed; }
+
+        @media (max-width: 640px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
     <div class="container">
         <h1>Audio Processing Showcase</h1>
         
@@ -16,6 +105,15 @@
                 <p>Processed version with background music and leveling.</p>
                 <audio controls>
                     <source src="https://github.com/earthwisegrounding/resume-polisher/releases/download/Audio/Marv.s.audio.clone-esv2-49p-bg-m-music-27p.mp3" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+
+            <div class="audio-card">
+                <h2 class="label-special">Voice Statement</h2>
+                <p>A 100% factual statement, by Marv Reeves</p>
+                <audio controls>
+                    <source src="https://github.com/earthwisegrounding/resume-polisher/releases/download/Audio/ElevenLabs_2026-03-06T01_16_40_Marv.Clone_pvc_sp100_s50_sb75_se0_b_m2.mp3" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
             </div>
